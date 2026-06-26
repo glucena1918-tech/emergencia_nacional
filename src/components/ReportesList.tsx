@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { Search, Users, AlertCircle, CheckCircle2, Phone, MapPin, Building, Package, ShieldAlert, Navigation, Skull } from 'lucide-react'
+import { Search, Users, AlertCircle, CheckCircle2, Phone, MapPin, Building, Package, ShieldAlert, Navigation, Ribbon } from 'lucide-react'
 import ReporteCard from './ReporteCard'
 import ExportPDF from './ExportPDF'
 import type { Reporte, RecursoEmergencia } from '../types/database'
@@ -90,7 +90,7 @@ export default function ReportesList({ reportes, recursos = [], loading, onMarca
     { key: 'todos', label: 'Todos', icon: <Users className="w-4 h-4" />, count: conteosPersonas.todos },
     { key: 'sin_contacto', label: 'Desaparecidos', icon: <AlertCircle className="w-4 h-4" />, count: conteosPersonas.sin_contacto },
     { key: 'localizado', label: 'Localizados', icon: <CheckCircle2 className="w-4 h-4" />, count: conteosPersonas.localizado },
-    { key: 'fallecido', label: 'Fallecidos', icon: <Skull className="w-4 h-4 text-slate-500" />, count: conteosPersonas.fallecido },
+    { key: 'fallecido', label: 'Fallecidos', icon: <Ribbon className="w-4 h-4 text-slate-500" />, count: conteosPersonas.fallecido },
   ]
 
   const tabsRecursos: { key: FiltroRecurso; label: string; icon: React.ReactNode; count: number }[] = [
