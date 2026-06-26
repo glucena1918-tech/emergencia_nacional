@@ -11,6 +11,7 @@ import { useReportes } from './hooks/useReportes'
 import { useRecursos } from './hooks/useRecursos'
 import { Heart } from 'lucide-react'
 import { AnimatePresence } from 'framer-motion'
+import type { Reporte } from './types/database'
 
 export default function App() {
   const {
@@ -18,6 +19,7 @@ export default function App() {
     loading: loadingReportes,
     crearReporte,
     actualizarEstado,
+    actualizarReporte,
     subirFoto,
   } = useReportes()
 
@@ -28,6 +30,20 @@ export default function App() {
 
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [isRecursoModalOpen, setIsRecursoModalOpen] = useState(false)
+  const [reporteAEditar, setReporteAEditar] = useState<Reporte | null>(null)
+
+  const handleCloseReportModal = () => {
+    setIsReportModalOpen(false)
+    setReporteAEditar(null)
+  }
+
+  const handleReportSubmit = async (data: any) => {
+    if (reporteAEditar) {
+      await actualizarReporte(reporteAEditar.id, data)
+    } else {
+      await crearReporte(data)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 selection:bg-orange-100 selection:text-orange-900">
@@ -46,9 +62,10 @@ export default function App() {
           {isReportModalOpen && (
             <ReporteForm
               isOpen={isReportModalOpen}
-              onClose={() => setIsReportModalOpen(false)}
-              onSubmit={crearReporte}
+              onClose={handleCloseReportModal}
+              onSubmit={handleReportSubmit}
               onUploadPhoto={subirFoto}
+              reporteAEditar={reporteAEditar}
             />
           )}
         </AnimatePresence>
@@ -68,6 +85,10 @@ export default function App() {
           recursos={recursos}
           loading={loadingReportes}
           onMarcarLocalizado={(id) => actualizarEstado(id, 'localizado')}
+          onEditPersona={(rep) => {
+            setReporteAEditar(rep)
+            setIsReportModalOpen(true)
+          }}
         />
 
         <MapaInteractivo reportes={reportes} recursos={recursos} />

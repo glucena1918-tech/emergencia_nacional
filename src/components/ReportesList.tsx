@@ -13,9 +13,10 @@ interface Props {
   recursos?: RecursoEmergencia[]
   loading: boolean
   onMarcarLocalizado: (id: string) => void
+  onEditPersona?: (reporte: Reporte) => void
 }
 
-export default function ReportesList({ reportes, recursos = [], loading, onMarcarLocalizado }: Props) {
+export default function ReportesList({ reportes, recursos = [], loading, onMarcarLocalizado, onEditPersona }: Props) {
   const [activeMainTab, setActiveMainTab] = useState<'personas' | 'recursos'>('personas')
   
   // Personas States
@@ -210,6 +211,7 @@ export default function ReportesList({ reportes, recursos = [], loading, onMarca
                     reporte={reporte}
                     index={i}
                     onMarcarLocalizado={onMarcarLocalizado}
+                    onEdit={onEditPersona}
                   />
                 ))}
               </div>

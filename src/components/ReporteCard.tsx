@@ -1,14 +1,15 @@
 import { motion } from 'framer-motion'
-import { MapPin, Clock, User, Phone, Eye } from 'lucide-react'
+import { MapPin, Clock, User, Phone, Eye, Pencil } from 'lucide-react'
 import type { Reporte } from '../types/database'
 
 interface Props {
   reporte: Reporte
   index: number
   onMarcarLocalizado?: (id: string) => void
+  onEdit?: (reporte: Reporte) => void
 }
 
-export default function ReporteCard({ reporte, index, onMarcarLocalizado }: Props) {
+export default function ReporteCard({ reporte, index, onMarcarLocalizado, onEdit }: Props) {
   const esLocalizado = reporte.estado_actual === 'localizado'
   const timeAgo = getTimeAgo(reporte.created_at)
 
@@ -47,15 +48,27 @@ export default function ReporteCard({ reporte, index, onMarcarLocalizado }: Prop
                 <span className="text-xs text-slate-500 font-semibold">{reporte.edad} años</span>
               )}
             </div>
-            <span
-              className={`shrink-0 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
-                esLocalizado
-                  ? 'bg-green-50 text-green-700 border-green-200/50'
-                  : 'bg-red-50 text-red-600 border-red-200/50'
-              }`}
-            >
-              {esLocalizado ? '✓ Localizado' : 'Sin contacto'}
-            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              {onEdit && (
+                <button
+                  type="button"
+                  onClick={() => onEdit(reporte)}
+                  className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-50 border border-slate-150 hover:border-slate-200 rounded-xl transition-all cursor-pointer shadow-3xs"
+                  title="Editar reporte"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              )}
+              <span
+                className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+                  esLocalizado
+                    ? 'bg-green-50 text-green-700 border-green-200/50'
+                    : 'bg-red-50 text-red-600 border-red-200/50'
+                }`}
+              >
+                {esLocalizado ? '✓ Localizado' : 'Sin contacto'}
+              </span>
+            </div>
           </div>
 
           {reporte.ultimo_lugar && (

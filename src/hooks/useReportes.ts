@@ -51,6 +51,18 @@ export function useReportes() {
     }
   }
 
+  const actualizarReporte = async (id: string, updates: Partial<ReporteInsert> & { estado_actual?: 'sin_contacto' | 'localizado' }) => {
+    try {
+      const { error: updateError } = await (supabase.from('reportes') as any)
+        .update(updates)
+        .eq('id', id)
+
+      if (updateError) throw updateError
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al actualizar el reporte')
+    }
+  }
+
   const subirFoto = async (file: File): Promise<string | null> => {
     try {
       const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`
@@ -110,6 +122,7 @@ export function useReportes() {
     error,
     crearReporte,
     actualizarEstado,
+    actualizarReporte,
     subirFoto,
     refetch: fetchReportes,
   }

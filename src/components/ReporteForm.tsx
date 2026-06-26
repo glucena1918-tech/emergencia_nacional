@@ -2,16 +2,17 @@ import { useState, useRef, useEffect, type FormEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Loader2, CheckCircle, Camera } from 'lucide-react'
 import { ESTADOS_VENEZUELA } from '../data/venezuela-geo'
-import type { ReporteInsert } from '../types/database'
+import type { Reporte, ReporteInsert } from '../types/database'
 
 interface Props {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (reporte: ReporteInsert) => Promise<unknown>
+  onSubmit: (reporte: ReporteInsert & { estado_actual?: 'sin_contacto' | 'localizado' }) => Promise<unknown>
   onUploadPhoto: (file: File) => Promise<string | null>
+  reporteAEditar?: Reporte | null
 }
 
-export default function ReporteForm({ isOpen, onClose, onSubmit, onUploadPhoto }: Props) {
+export default function ReporteForm({ isOpen, onClose, onSubmit, onUploadPhoto, reporteAEditar = null }: Props) {
   const [nombre, setNombre] = useState('')
   const [edad, setEdad] = useState('')
   const [ultimoLugar, setUltimoLugar] = useState('')
@@ -22,6 +23,7 @@ export default function ReporteForm({ isOpen, onClose, onSubmit, onUploadPhoto }
   const [municipio, setMunicipio] = useState('')
   const [foto, setFoto] = useState<File | null>(null)
   const [fotoPreview, setFotoPreview] = useState<string | null>(null)
+  const [estadoActual, setEstadoActual] = useState<'sin_contacto' | 'localizado'>('sin_contacto')
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -67,11 +69,38 @@ export default function ReporteForm({ isOpen, onClose, onSubmit, onUploadPhoto }
     if (fileRef.current) fileRef.current.value = ''
   }
 
+  // Effect to load data in edit mode
+  useEffect(() => {
+    if (reporteAEditar && isOpen) {
+      setNombre(reporteAEditar.nombre || '')
+      setEdad(reporteAEditar.edad ? String(reporteAEditar.edad) : '')
+      setUltimoLugar(reporteAEditar.ultimo_lugar || '')
+      setDesdeCuando(reporteAEditar.desde_cuando || '')
+      setDescripcion(reporteAEditar.descripcion_fisica || '')
+      setContacto(reporteAEditar.contacto_reportante || '')
+      setEstadoVenezuela(reporteAEditar.estado_venezuela || '')
+      setMunicipio(reporteAEditar.municipio || '')
+      setEstadoActual(reporteAEditar.estado_actual)
+      setFotoPreview(reporteAEditar.foto_url || null)
+    } else if (isOpen) {
+      setNombre('')
+      setEdad('')
+      setUltimoLugar('')
+      setDesdeCuando('')
+      setDescripcion('')
+      setContacto('')
+      setEstadoVenezuela('')
+      setMunicipio('')
+      setEstadoActual('sin_contacto')
+      setFotoPreview(null)
+    }
+  }, [reporteAEditar, isOpen])
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setSending(true)
 
-    let foto_url: string | null = null
+    let foto_url = reporteAEditar?.foto_url || null
     if (foto) {
       foto_url = await onUploadPhoto(foto)
     }
@@ -81,11 +110,11 @@ export default function ReporteForm({ isOpen, onClose, onSubmit, onUploadPhoto }
       ? { latitud: estadoSeleccionado.lat, longitud: estadoSeleccionado.lng }
       : {}
 
-    const reporte: ReporteInsert = {
+    const reporte: ReporteInsert & { estado_actual?: 'sin_contacto' | 'localizado' } = {
       nombre: nombre || null,
       edad: edad ? parseInt(edad) : null,
       ultimo_lugar: ultimoLugar || null,
-      estado_actual: 'sin_contacto',
+      estado_actual: estadoActual,
       foto_url,
       descripcion_fisica: descripcion || null,
       desde_cuando: desdeCuando || null,
@@ -109,6 +138,7 @@ export default function ReporteForm({ isOpen, onClose, onSubmit, onUploadPhoto }
       setContacto('')
       setEstadoVenezuela('')
       setMunicipio('')
+      setEstadoActual('sin_contacto')
       removeFoto()
       setSent(false)
       onClose()
@@ -134,10 +164,10 @@ export default function ReporteForm({ isOpen, onClose, onSubmit, onUploadPhoto }
         <div className="flex items-center justify-between mb-1 border-b border-slate-100 pb-3">
           <div>
             <h3 className="text-xl font-bold text-slate-800">
-              Reportar a una persona
+              {reporteAEditar ? 'Editar reporte de persona' : 'Reportar a una persona'}
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Comparte lo que sepas. Todos los campos son opcionales.
+              {reporteAEditar ? 'Corrige o actualiza la información del reporte.' : 'Comparte lo que sepas. Todos los campos son opcionales.'}
             </p>
           </div>
           <button
@@ -160,10 +190,10 @@ export default function ReporteForm({ isOpen, onClose, onSubmit, onUploadPhoto }
             >
               <CheckCircle className="w-16 h-16 text-safe mb-4" />
               <h4 className="text-xl font-bold text-slate-800 mb-2">
-                ¡Reporte publicado!
+                {reporteAEditar ? '¡Reporte actualizado!' : '¡Reporte publicado!'}
               </h4>
               <p className="text-slate-500 text-sm">
-                Tu reporte ya es visible en la lista y en el mapa. Gracias por ayudar.
+                {reporteAEditar ? 'Los cambios han sido guardados con éxito.' : 'Tu reporte ya es visible en la lista y en el mapa. Gracias por ayudar.'}
               </p>
             </motion.div>
           ) : (
@@ -242,6 +272,39 @@ export default function ReporteForm({ isOpen, onClose, onSubmit, onUploadPhoto }
                   />
                 </div>
               </div>
+
+              {/* Estatus - visible when editing */}
+              {reporteAEditar && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wider">
+                    Estatus actual *
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEstadoActual('sin_contacto')}
+                      className={`py-2 px-3 border rounded-xl text-xs font-bold transition-all text-center cursor-pointer ${
+                        estadoActual === 'sin_contacto'
+                          ? 'border-red-500 text-red-700 bg-red-50/50 shadow-xs ring-2 ring-red-100'
+                          : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50'
+                      }`}
+                    >
+                      🔴 Sin contacto
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEstadoActual('localizado')}
+                      className={`py-2.5 px-3 border rounded-xl text-xs font-bold transition-all text-center cursor-pointer ${
+                        estadoActual === 'localizado'
+                          ? 'border-green-500 text-green-700 bg-green-50/50 shadow-xs ring-2 ring-green-100'
+                          : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50'
+                      }`}
+                    >
+                      🟢 Localizado
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Estado + Municipio */}
               <div className="grid grid-cols-2 gap-3">
@@ -345,19 +408,19 @@ export default function ReporteForm({ isOpen, onClose, onSubmit, onUploadPhoto }
                     setEstadoVenezuela(''); setMunicipio(''); removeFoto()
                     onClose()
                   }}
-                  className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium transition-all text-sm"
+                  className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium transition-all text-sm cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={sending}
-                  className="flex-1 py-2.5 rounded-xl bg-accent hover:bg-blue-600 text-white font-semibold transition-all hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2 text-sm shadow-md shadow-blue-500/10"
+                  className="flex-1 py-2.5 rounded-xl bg-accent hover:bg-blue-600 text-white font-semibold transition-all hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2 text-sm shadow-md shadow-blue-500/10 cursor-pointer"
                 >
                   {sending ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : null}
-                  {sending ? 'Publicando...' : 'Publicar reporte →'}
+                  {sending ? (reporteAEditar ? 'Guardando...' : 'Publicando...') : (reporteAEditar ? 'Guardar cambios →' : 'Publicar reporte →')}
                 </button>
               </div>
             </form>
