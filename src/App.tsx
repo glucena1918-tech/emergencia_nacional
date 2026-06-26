@@ -2,24 +2,32 @@ import { useState } from 'react'
 import Header from './components/Header'
 import HeroBanner from './components/HeroBanner'
 import ReporteForm from './components/ReporteForm'
+import RecursoForm from './components/RecursoForm'
 import ReportesList from './components/ReportesList'
 import MapaInteractivo from './components/MapaInteractivo'
 import EmergencyDirectory from './components/EmergencyDirectory'
 import Footer from './components/Footer'
 import { useReportes } from './hooks/useReportes'
+import { useRecursos } from './hooks/useRecursos'
 import { Heart } from 'lucide-react'
 import { AnimatePresence } from 'framer-motion'
 
 export default function App() {
   const {
     reportes,
-    loading,
+    loading: loadingReportes,
     crearReporte,
     actualizarEstado,
     subirFoto,
   } = useReportes()
 
+  const {
+    recursos,
+    crearRecurso,
+  } = useRecursos()
+
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
+  const [isRecursoModalOpen, setIsRecursoModalOpen] = useState(false)
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 selection:bg-orange-100 selection:text-orange-900">
@@ -28,6 +36,7 @@ export default function App() {
       <main className="pb-32">
         <HeroBanner
           onOpenReportModal={() => setIsReportModalOpen(true)}
+          onOpenRecursoModal={() => setIsRecursoModalOpen(true)}
           totalCount={reportes.length}
           sinContactoCount={reportes.filter(r => r.estado_actual === 'sin_contacto').length}
           localizadosCount={reportes.filter(r => r.estado_actual === 'localizado').length}
@@ -44,13 +53,25 @@ export default function App() {
           )}
         </AnimatePresence>
 
+        <AnimatePresence>
+          {isRecursoModalOpen && (
+            <RecursoForm
+              isOpen={isRecursoModalOpen}
+              onClose={() => setIsRecursoModalOpen(false)}
+              onSubmit={crearRecurso}
+            />
+          )}
+        </AnimatePresence>
+
         <ReportesList
           reportes={reportes}
-          loading={loading}
+          recursos={recursos}
+          loading={loadingReportes}
           onMarcarLocalizado={(id) => actualizarEstado(id, 'localizado')}
         />
 
-        <MapaInteractivo reportes={reportes} />
+        <MapaInteractivo reportes={reportes} recursos={recursos} />
+
 
         <EmergencyDirectory />
       </main>

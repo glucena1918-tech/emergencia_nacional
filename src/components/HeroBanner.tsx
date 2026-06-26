@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion'
-import { AlertTriangle, Phone, ShieldCheck, Heart } from 'lucide-react'
+import { AlertTriangle, Phone, ShieldCheck, Heart, MapPin } from 'lucide-react'
 
 interface Props {
   onOpenReportModal: () => void
+  onOpenRecursoModal: () => void
   totalCount: number
   sinContactoCount: number
   localizadosCount: number
@@ -10,6 +11,7 @@ interface Props {
 
 export default function HeroBanner({
   onOpenReportModal,
+  onOpenRecursoModal,
   totalCount,
   sinContactoCount,
   localizadosCount,
@@ -72,22 +74,32 @@ export default function HeroBanner({
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-5 mb-16 px-4"
+          className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 px-4"
         >
           <button
             onClick={onOpenReportModal}
-            className="w-full sm:w-auto px-10 py-5 bg-gradient-to-r from-emergency to-rose-500 hover:from-emergency-dark hover:to-rose-600 text-white font-extrabold text-lg rounded-2xl transition-all duration-300 hover:scale-105 cursor-pointer shadow-lg shadow-orange-500/25 flex items-center justify-center gap-3 active:scale-98 pulse-action-btn"
+            className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-emergency to-rose-500 hover:from-emergency-dark hover:to-rose-600 text-white font-extrabold text-base rounded-2xl transition-all duration-300 hover:scale-105 cursor-pointer shadow-md hover:shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2.5 active:scale-98 pulse-action-btn"
           >
-            <Heart className="w-5 h-5 text-white animate-pulse" fill="white" />
+            <Heart className="w-4 h-4 text-white animate-pulse" fill="white" />
             Reportar a una persona
           </button>
+          
+          <button
+            onClick={onOpenRecursoModal}
+            className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-700 hover:to-green-600 text-white font-extrabold text-base rounded-2xl transition-all duration-300 hover:scale-105 cursor-pointer shadow-md hover:shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2.5 active:scale-98"
+          >
+            <MapPin className="w-4 h-4 text-white" />
+            Registrar Punto de Ayuda
+          </button>
+
           <a
             href="#buscar"
-            className="w-full sm:w-auto px-10 py-5 bg-slate-200/50 hover:bg-slate-200/80 text-slate-700 font-bold text-base rounded-2xl border border-slate-200/60 transition-all duration-200 text-center"
+            className="w-full sm:w-auto px-8 py-4 bg-slate-200/50 hover:bg-slate-200/80 text-slate-700 font-bold text-base rounded-2xl border border-slate-200/60 transition-all duration-200 text-center"
           >
             Buscar personas
           </a>
         </motion.div>
+
 
         {/* Prominent Statistics block (desahogado) */}
         <motion.div

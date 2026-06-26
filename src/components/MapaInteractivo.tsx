@@ -4,7 +4,7 @@ import L from 'leaflet'
 import { motion } from 'framer-motion'
 import { Map as MapIcon, ChevronDown, X, Layers, Filter } from 'lucide-react'
 import { VENEZUELA_CENTER, VENEZUELA_ZOOM, ESTADOS_VENEZUELA } from '../data/venezuela-geo'
-import type { Reporte } from '../types/database'
+import type { Reporte, RecursoEmergencia } from '../types/database'
 import 'leaflet/dist/leaflet.css'
 
 // ── Marker icons ──────────────────────────────────────────────────────
@@ -19,6 +19,33 @@ const iconSinContacto = new L.Icon({
 
 const iconLocalizado = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+})
+
+const iconHospital = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+})
+
+const iconAcopio = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+})
+
+const iconAmbulatorio = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
@@ -70,15 +97,22 @@ function MapController({
 // ── Main component ────────────────────────────────────────────────────
 interface Props {
   reportes: Reporte[]
+  recursos?: RecursoEmergencia[]
 }
 
-export default function MapaInteractivo({ reportes }: Props) {
+export default function MapaInteractivo({ reportes, recursos = [] }: Props) {
   const [adm1Data, setAdm1Data] = useState<GeoJSONData | null>(null)
   const [adm2Data, setAdm2Data] = useState<GeoJSONData | null>(null)
   const [selectedEstado, setSelectedEstado] = useState<string | null>(null)
   const [showMunicipios, setShowMunicipios] = useState(true)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Layer filter toggles
+  const [showReportes, setShowReportes] = useState(true)
+  const [showHospitales, setShowHospitales] = useState(true)
+  const [showAcopios, setShowAcopios] = useState(true)
+  const [showAmbulatorios, setShowAmbulatorios] = useState(true)
 
   // GeoJSON key to force re-render when data/selection changes
   const [geoKey, setGeoKey] = useState(0)
@@ -128,6 +162,13 @@ export default function MapaInteractivo({ reportes }: Props) {
     return conCoordenadas.filter((r) => r.estado_venezuela === selectedEstado)
   }, [reportes, selectedEstado])
 
+  // Filter recursos by selected estado
+  const recursosFiltrados = useMemo(() => {
+    const list = recursos.filter((r) => r.latitud && r.longitud)
+    if (!selectedEstado) return list
+    return list.filter((r) => r.estado_venezuela === selectedEstado)
+  }, [recursos, selectedEstado])
+
   // Count per-state for badge
   const conteosPorEstado = useMemo(() => {
     const counts: Record<string, number> = {}
@@ -138,6 +179,57 @@ export default function MapaInteractivo({ reportes }: Props) {
     })
     return counts
   }, [reportes])
+
+  // Helper to render emergency resource popup
+  const renderPopupRecurso = useCallback((rec: RecursoEmergencia) => {
+    const typeLabel =
+      rec.tipo === 'hospital'
+        ? '🏥 Hospital'
+        : rec.tipo === 'acopio'
+        ? '📦 Centro de Acopio'
+        : '⚡ Ambulatorio Improvisado'
+
+    const badgeColor =
+      rec.tipo === 'hospital'
+        ? 'bg-blue-50 text-blue-700 border-blue-200/50'
+        : rec.tipo === 'acopio'
+        ? 'bg-green-50 text-green-700 border-green-200/50'
+        : 'bg-orange-50 text-orange-700 border-orange-200/50'
+
+    return (
+      <div className="text-sm min-w-[220px] p-0.5">
+        <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-bold border uppercase tracking-wider mb-2 ${badgeColor}`}>
+          {typeLabel}
+        </span>
+        <p className="font-extrabold text-slate-800 text-sm leading-snug">
+          {rec.nombre}
+        </p>
+        {rec.contacto && (
+          <p className="text-slate-600 text-xs mt-1.5 font-semibold flex items-center gap-1">
+            📞 {rec.contacto}
+          </p>
+        )}
+        {rec.direccion && (
+          <p className="text-slate-500 text-xs mt-1 font-medium leading-relaxed">
+            📍 <span className="font-semibold text-slate-600">Dirección:</span> {rec.direccion}
+          </p>
+        )}
+        {rec.descripcion && (
+          <div className="mt-2 text-xs text-slate-500 bg-slate-50 p-2 rounded-lg border border-slate-100 italic">
+            {rec.descripcion}
+          </div>
+        )}
+        <div className="mt-2.5 flex items-center justify-between text-[10px] text-slate-400 font-semibold border-t border-slate-100 pt-2">
+          <span>{rec.estado_venezuela} · {rec.municipio}</span>
+          {rec.verificado ? (
+            <span className="text-emerald-600 font-bold">✓ Verificado</span>
+          ) : (
+            <span className="text-amber-600 font-bold">Pendiente</span>
+          )}
+        </div>
+      </div>
+    )
+  }, [])
 
   // Filtered municipalities for selected state
   const municipiosFiltrados = useMemo(() => {
@@ -377,33 +469,76 @@ export default function MapaInteractivo({ reportes }: Props) {
             )}
           </div>
 
-          {/* ── Legend ──────────────────────────────────────────────── */}
-          <div className="flex flex-wrap gap-4 mb-4 text-xs text-slate-600 font-semibold">
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-full bg-danger" />
-              Sin contacto
+          {/* ── Legend & Interactive Layer Toggles ─────────────────── */}
+          <div className="flex flex-wrap gap-3 mb-5 text-xs font-bold">
+            {/* Personas Reportadas */}
+            <button
+              type="button"
+              onClick={() => setShowReportes(!showReportes)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${
+                showReportes
+                  ? 'bg-red-50 text-red-700 border-red-200 shadow-2xs'
+                  : 'bg-white text-slate-400 border-slate-200/60 hover:bg-slate-50'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-red-500" />
+              Personas ({reportesFiltrados.length})
+            </button>
+
+            {/* Hospitales */}
+            <button
+              type="button"
+              onClick={() => setShowHospitales(!showHospitales)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${
+                showHospitales
+                  ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-2xs'
+                  : 'bg-white text-slate-400 border-slate-200/60 hover:bg-slate-50'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-blue-500" />
+              Hospitales ({recursosFiltrados.filter(r => r.tipo === 'hospital').length})
+            </button>
+
+            {/* Centros de Acopio */}
+            <button
+              type="button"
+              onClick={() => setShowAcopios(!showAcopios)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${
+                showAcopios
+                  ? 'bg-green-50 text-green-700 border-green-200 shadow-2xs'
+                  : 'bg-white text-slate-400 border-slate-200/60 hover:bg-slate-50'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-green-500" />
+              Centros de Acopio ({recursosFiltrados.filter(r => r.tipo === 'acopio').length})
+            </button>
+
+            {/* Ambulatorios Improvisados */}
+            <button
+              type="button"
+              onClick={() => setShowAmbulatorios(!showAmbulatorios)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${
+                showAmbulatorios
+                  ? 'bg-orange-50 text-orange-700 border-orange-200 shadow-2xs'
+                  : 'bg-white text-slate-400 border-slate-200/60 hover:bg-slate-50'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-orange-500" />
+              Ambulatorios ({recursosFiltrados.filter(r => r.tipo === 'ambulatorio_improvisado').length})
+            </button>
+
+            <div className="h-5 w-px bg-slate-200 self-center hidden sm:block mx-1" />
+
+            {/* Boundaries legend */}
+            <div className="flex items-center gap-1.5 text-slate-500 px-2 self-center">
+              <span className="w-3.5 h-0.5 bg-slate-400" />
+              <span>Límites</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-full bg-safe" />
-              Localizado
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span
-                className="w-3 h-3 rounded-sm border-2 border-slate-400"
-                style={{ opacity: 0.4 }}
-              />
-              Límites estatales
-            </div>
+            
             {selectedEstado && showMunicipios && (
-              <div className="flex items-center gap-1.5">
-                <span
-                  className="w-3 h-3 rounded-sm"
-                  style={{
-                    border: '2px dashed #3b82f6',
-                    opacity: 0.6,
-                  }}
-                />
-                Municipios
+              <div className="flex items-center gap-1.5 text-blue-500 px-2 self-center">
+                <span className="w-3.5 h-0.5 border-t border-dashed border-blue-400" />
+                <span>Municipios</span>
               </div>
             )}
           </div>
@@ -454,7 +589,7 @@ export default function MapaInteractivo({ reportes }: Props) {
                 )}
 
               {/* Report markers */}
-              {reportesFiltrados.map((reporte) => (
+              {showReportes && reportesFiltrados.map((reporte) => (
                 <Marker
                   key={reporte.id}
                   position={[reporte.latitud!, reporte.longitud!]}
@@ -502,6 +637,48 @@ export default function MapaInteractivo({ reportes }: Props) {
                   </Popup>
                 </Marker>
               ))}
+
+              {/* Hospital markers */}
+              {showHospitales &&
+                recursosFiltrados
+                  .filter((r) => r.tipo === 'hospital')
+                  .map((rec) => (
+                    <Marker
+                      key={rec.id}
+                      position={[rec.latitud, rec.longitud]}
+                      icon={iconHospital}
+                    >
+                      <Popup>{renderPopupRecurso(rec)}</Popup>
+                    </Marker>
+                  ))}
+
+              {/* Acopio markers */}
+              {showAcopios &&
+                recursosFiltrados
+                  .filter((r) => r.tipo === 'acopio')
+                  .map((rec) => (
+                    <Marker
+                      key={rec.id}
+                      position={[rec.latitud, rec.longitud]}
+                      icon={iconAcopio}
+                    >
+                      <Popup>{renderPopupRecurso(rec)}</Popup>
+                    </Marker>
+                  ))}
+
+              {/* Ambulatorio markers */}
+              {showAmbulatorios &&
+                recursosFiltrados
+                  .filter((r) => r.tipo === 'ambulatorio_improvisado')
+                  .map((rec) => (
+                    <Marker
+                      key={rec.id}
+                      position={[rec.latitud, rec.longitud]}
+                      icon={iconAmbulatorio}
+                    >
+                      <Popup>{renderPopupRecurso(rec)}</Popup>
+                    </Marker>
+                  ))}
             </MapContainer>
           </div>
 

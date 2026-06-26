@@ -45,6 +45,35 @@ export interface Emergencia {
   created_at: string
 }
 
+export interface RecursoEmergencia {
+  id: string
+  nombre: string
+  tipo: 'hospital' | 'acopio' | 'ambulatorio_improvisado'
+  descripcion: string | null
+  contacto: string | null
+  direccion: string | null
+  latitud: number
+  longitud: number
+  estado_venezuela: string
+  municipio: string
+  verificado: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface RecursoEmergenciaInsert {
+  nombre: string
+  tipo: 'hospital' | 'acopio' | 'ambulatorio_improvisado'
+  descripcion?: string | null
+  contacto?: string | null
+  direccion?: string | null
+  latitud: number
+  longitud: number
+  estado_venezuela: string
+  municipio: string
+  verificado?: boolean
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -58,6 +87,12 @@ export interface Database {
         Row: Emergencia
         Insert: Omit<Emergencia, 'id' | 'created_at'>
         Update: Partial<Omit<Emergencia, 'id' | 'created_at'>>
+        Relationships: []
+      }
+      recursos_emergencia: {
+        Row: RecursoEmergencia
+        Insert: RecursoEmergenciaInsert
+        Update: Partial<RecursoEmergenciaInsert>
         Relationships: []
       }
     }
@@ -75,4 +110,5 @@ export interface Database {
     }
   }
 }
+
 
