@@ -7,6 +7,7 @@ import ReportesList from './components/ReportesList'
 import MapaInteractivo from './components/MapaInteractivo'
 import EmergencyDirectory from './components/EmergencyDirectory'
 import Footer from './components/Footer'
+import ReporteDetailModal from './components/ReporteDetailModal'
 import { useReportes } from './hooks/useReportes'
 import { useRecursos } from './hooks/useRecursos'
 import { Heart } from 'lucide-react'
@@ -21,6 +22,8 @@ export default function App() {
     actualizarEstado,
     actualizarReporte,
     subirFoto,
+    cargarComentarios,
+    agregarComentario,
   } = useReportes()
 
   const {
@@ -31,6 +34,7 @@ export default function App() {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [isRecursoModalOpen, setIsRecursoModalOpen] = useState(false)
   const [reporteAEditar, setReporteAEditar] = useState<Reporte | null>(null)
+  const [reporteSeleccionado, setReporteSeleccionado] = useState<Reporte | null>(null)
 
   const handleCloseReportModal = () => {
     setIsReportModalOpen(false)
@@ -80,6 +84,21 @@ export default function App() {
           )}
         </AnimatePresence>
 
+        <AnimatePresence>
+          {reporteSeleccionado && (
+            <ReporteDetailModal
+              isOpen={!!reporteSeleccionado}
+              reporte={reporteSeleccionado}
+              onClose={() => setReporteSeleccionado(null)}
+              onCargarComentarios={cargarComentarios}
+              onAgregarComentario={async (id, autor, contenido) => {
+                return agregarComentario({ reporte_id: id, autor, contenido })
+              }}
+              onActualizarEstado={actualizarEstado}
+            />
+          )}
+        </AnimatePresence>
+
         <ReportesList
           reportes={reportes}
           recursos={recursos}
@@ -89,6 +108,7 @@ export default function App() {
             setReporteAEditar(rep)
             setIsReportModalOpen(true)
           }}
+          onSelectPersona={(rep) => setReporteSeleccionado(rep)}
         />
 
         <MapaInteractivo reportes={reportes} recursos={recursos} />

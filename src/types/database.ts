@@ -3,7 +3,7 @@ export interface Reporte {
   nombre: string | null
   edad: number | null
   ultimo_lugar: string | null
-  estado_actual: 'sin_contacto' | 'localizado'
+  estado_actual: 'sin_contacto' | 'localizado' | 'fallecido'
   foto_url: string | null
   descripcion_fisica: string | null
   desde_cuando: string | null
@@ -17,13 +17,16 @@ export interface Reporte {
   verificado_en: string | null
   created_at: string
   updated_at: string
+  genero: string | null
+  cedula: string | null
+  desaparicion_tipo: string | null
 }
 
 export interface ReporteInsert {
   nombre?: string | null
   edad?: number | null
   ultimo_lugar?: string | null
-  estado_actual?: 'sin_contacto' | 'localizado'
+  estado_actual?: 'sin_contacto' | 'localizado' | 'fallecido'
   foto_url?: string | null
   descripcion_fisica?: string | null
   desde_cuando?: string | null
@@ -32,6 +35,23 @@ export interface ReporteInsert {
   longitud?: number | null
   estado_venezuela?: string | null
   municipio?: string | null
+  genero?: string | null
+  cedula?: string | null
+  desaparicion_tipo?: string | null
+}
+
+export interface ComentarioReporte {
+  id: string
+  reporte_id: string
+  autor: string
+  contenido: string
+  created_at: string
+}
+
+export interface ComentarioReporteInsert {
+  reporte_id: string
+  autor?: string
+  contenido: string
 }
 
 export interface Emergencia {

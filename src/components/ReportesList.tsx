@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { Search, Users, AlertCircle, CheckCircle2, Phone, MapPin, Building, Package, ShieldAlert, Navigation } from 'lucide-react'
+import { Search, Users, AlertCircle, CheckCircle2, Phone, MapPin, Building, Package, ShieldAlert, Navigation, Skull } from 'lucide-react'
 import ReporteCard from './ReporteCard'
 import ExportPDF from './ExportPDF'
 import type { Reporte, RecursoEmergencia } from '../types/database'
 
-type FiltroPersona = 'todos' | 'sin_contacto' | 'localizado'
+type FiltroPersona = 'todos' | 'sin_contacto' | 'localizado' | 'fallecido'
 type FiltroRecurso = 'todos' | 'hospital' | 'acopio' | 'ambulatorio_improvisado'
 
 interface Props {
@@ -14,9 +14,10 @@ interface Props {
   loading: boolean
   onMarcarLocalizado: (id: string) => void
   onEditPersona?: (reporte: Reporte) => void
+  onSelectPersona?: (reporte: Reporte) => void
 }
 
-export default function ReportesList({ reportes, recursos = [], loading, onMarcarLocalizado, onEditPersona }: Props) {
+export default function ReportesList({ reportes, recursos = [], loading, onMarcarLocalizado, onEditPersona, onSelectPersona }: Props) {
   const [activeMainTab, setActiveMainTab] = useState<'personas' | 'recursos'>('personas')
   
   // Personas States
@@ -75,6 +76,7 @@ export default function ReportesList({ reportes, recursos = [], loading, onMarca
     todos: reportes.length,
     sin_contacto: reportes.filter(r => r.estado_actual === 'sin_contacto').length,
     localizado: reportes.filter(r => r.estado_actual === 'localizado').length,
+    fallecido: reportes.filter(r => r.estado_actual === 'fallecido').length,
   }), [reportes])
 
   const conteosRecursos = useMemo(() => ({
@@ -86,8 +88,9 @@ export default function ReportesList({ reportes, recursos = [], loading, onMarca
 
   const tabsPersonas: { key: FiltroPersona; label: string; icon: React.ReactNode; count: number }[] = [
     { key: 'todos', label: 'Todos', icon: <Users className="w-4 h-4" />, count: conteosPersonas.todos },
-    { key: 'sin_contacto', label: 'Sin contacto', icon: <AlertCircle className="w-4 h-4" />, count: conteosPersonas.sin_contacto },
+    { key: 'sin_contacto', label: 'Desaparecidos', icon: <AlertCircle className="w-4 h-4" />, count: conteosPersonas.sin_contacto },
     { key: 'localizado', label: 'Localizados', icon: <CheckCircle2 className="w-4 h-4" />, count: conteosPersonas.localizado },
+    { key: 'fallecido', label: 'Fallecidos', icon: <Skull className="w-4 h-4 text-slate-500" />, count: conteosPersonas.fallecido },
   ]
 
   const tabsRecursos: { key: FiltroRecurso; label: string; icon: React.ReactNode; count: number }[] = [
@@ -161,7 +164,9 @@ export default function ReportesList({ reportes, recursos = [], loading, onMarca
                     onClick={() => setFiltroPersona(tab.key)}
                     className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 cursor-pointer whitespace-nowrap ${
                       filtroPersona === tab.key
-                        ? 'bg-accent text-white shadow-sm shadow-blue-500/10'
+                        ? tab.key === 'fallecido'
+                          ? 'bg-slate-700 text-white shadow-sm shadow-slate-500/10'
+                          : 'bg-accent text-white shadow-sm shadow-blue-500/10'
                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/40'
                     }`}
                   >
@@ -204,7 +209,7 @@ export default function ReportesList({ reportes, recursos = [], loading, onMarca
                 </p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {personasFiltradas.map((reporte, i) => (
                   <ReporteCard
                     key={reporte.id}
@@ -212,6 +217,7 @@ export default function ReportesList({ reportes, recursos = [], loading, onMarca
                     index={i}
                     onMarcarLocalizado={onMarcarLocalizado}
                     onEdit={onEditPersona}
+                    onClick={onSelectPersona}
                   />
                 ))}
               </div>

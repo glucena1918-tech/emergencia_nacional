@@ -7,7 +7,7 @@ import type { Reporte, ReporteInsert } from '../types/database'
 interface Props {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (reporte: ReporteInsert & { estado_actual?: 'sin_contacto' | 'localizado' }) => Promise<unknown>
+  onSubmit: (reporte: ReporteInsert & { estado_actual?: 'sin_contacto' | 'localizado' | 'fallecido' }) => Promise<unknown>
   onUploadPhoto: (file: File) => Promise<string | null>
   reporteAEditar?: Reporte | null
 }
@@ -23,7 +23,10 @@ export default function ReporteForm({ isOpen, onClose, onSubmit, onUploadPhoto, 
   const [municipio, setMunicipio] = useState('')
   const [foto, setFoto] = useState<File | null>(null)
   const [fotoPreview, setFotoPreview] = useState<string | null>(null)
-  const [estadoActual, setEstadoActual] = useState<'sin_contacto' | 'localizado'>('sin_contacto')
+  const [estadoActual, setEstadoActual] = useState<'sin_contacto' | 'localizado' | 'fallecido'>('sin_contacto')
+  const [genero, setGenero] = useState<'Masculino' | 'Femenino' | ''>('')
+  const [cedula, setCedula] = useState('')
+  const [desaparicionTipo, setDesaparicionTipo] = useState<'Solo' | 'Con Familiar' | ''>('')
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -82,6 +85,9 @@ export default function ReporteForm({ isOpen, onClose, onSubmit, onUploadPhoto, 
       setMunicipio(reporteAEditar.municipio || '')
       setEstadoActual(reporteAEditar.estado_actual)
       setFotoPreview(reporteAEditar.foto_url || null)
+      setGenero((reporteAEditar.genero as any) || '')
+      setCedula(reporteAEditar.cedula || '')
+      setDesaparicionTipo((reporteAEditar.desaparicion_tipo as any) || '')
     } else if (isOpen) {
       setNombre('')
       setEdad('')
@@ -93,6 +99,9 @@ export default function ReporteForm({ isOpen, onClose, onSubmit, onUploadPhoto, 
       setMunicipio('')
       setEstadoActual('sin_contacto')
       setFotoPreview(null)
+      setGenero('')
+      setCedula('')
+      setDesaparicionTipo('')
     }
   }, [reporteAEditar, isOpen])
 
@@ -110,7 +119,7 @@ export default function ReporteForm({ isOpen, onClose, onSubmit, onUploadPhoto, 
       ? { latitud: estadoSeleccionado.lat, longitud: estadoSeleccionado.lng }
       : {}
 
-    const reporte: ReporteInsert & { estado_actual?: 'sin_contacto' | 'localizado' } = {
+    const reporte: ReporteInsert & { estado_actual?: 'sin_contacto' | 'localizado' | 'fallecido' } = {
       nombre: nombre || null,
       edad: edad ? parseInt(edad) : null,
       ultimo_lugar: ultimoLugar || null,
@@ -121,6 +130,9 @@ export default function ReporteForm({ isOpen, onClose, onSubmit, onUploadPhoto, 
       contacto_reportante: contacto || null,
       estado_venezuela: estadoVenezuela || null,
       municipio: municipio || null,
+      genero: genero || null,
+      cedula: cedula || null,
+      desaparicion_tipo: desaparicionTipo || null,
       ...coords,
     }
 
@@ -139,6 +151,9 @@ export default function ReporteForm({ isOpen, onClose, onSubmit, onUploadPhoto, 
       setEstadoVenezuela('')
       setMunicipio('')
       setEstadoActual('sin_contacto')
+      setGenero('')
+      setCedula('')
+      setDesaparicionTipo('')
       removeFoto()
       setSent(false)
       onClose()
@@ -273,23 +288,99 @@ export default function ReporteForm({ isOpen, onClose, onSubmit, onUploadPhoto, 
                 </div>
               </div>
 
+              {/* Cédula + Género */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wider">
+                    Cédula de Identidad
+                  </label>
+                  <input
+                    type="text"
+                    value={cedula}
+                    onChange={e => setCedula(e.target.value)}
+                    placeholder="Ej. 20.005.991"
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all text-sm font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wider">
+                    Género
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setGenero('Masculino')}
+                      className={`py-2.5 px-3 border rounded-xl text-xs font-bold transition-all text-center cursor-pointer ${
+                        genero === 'Masculino'
+                          ? 'border-blue-500 text-blue-700 bg-blue-50/50 shadow-xs ring-2 ring-blue-100'
+                          : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50'
+                      }`}
+                    >
+                      Masculino
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGenero('Femenino')}
+                      className={`py-2.5 px-3 border rounded-xl text-xs font-bold transition-all text-center cursor-pointer ${
+                        genero === 'Femenino'
+                          ? 'border-pink-500 text-pink-700 bg-pink-50/50 shadow-xs ring-2 ring-pink-100'
+                          : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50'
+                      }`}
+                    >
+                      Femenino
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tipo de Desaparición */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wider">
+                  Condición de Desaparición
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setDesaparicionTipo('Solo')}
+                    className={`py-2.5 px-3 border rounded-xl text-xs font-bold transition-all text-center cursor-pointer ${
+                      desaparicionTipo === 'Solo'
+                        ? 'border-indigo-500 text-indigo-700 bg-indigo-50/50 shadow-xs ring-2 ring-indigo-100'
+                        : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50'
+                    }`}
+                  >
+                    👤 Desaparecido Solo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDesaparicionTipo('Con Familiar')}
+                    className={`py-2.5 px-3 border rounded-xl text-xs font-bold transition-all text-center cursor-pointer ${
+                      desaparicionTipo === 'Con Familiar'
+                        ? 'border-indigo-500 text-indigo-700 bg-indigo-50/50 shadow-xs ring-2 ring-indigo-100'
+                        : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50'
+                    }`}
+                  >
+                    👥 Con Familiar
+                  </button>
+                </div>
+              </div>
+
               {/* Estatus - visible when editing */}
               {reporteAEditar && (
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wider">
                     Estatus actual *
                   </label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     <button
                       type="button"
                       onClick={() => setEstadoActual('sin_contacto')}
-                      className={`py-2 px-3 border rounded-xl text-xs font-bold transition-all text-center cursor-pointer ${
+                      className={`py-2.5 px-3 border rounded-xl text-xs font-bold transition-all text-center cursor-pointer ${
                         estadoActual === 'sin_contacto'
                           ? 'border-red-500 text-red-700 bg-red-50/50 shadow-xs ring-2 ring-red-100'
                           : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50'
                       }`}
                     >
-                      🔴 Sin contacto
+                      🔴 Desaparecido
                     </button>
                     <button
                       type="button"
@@ -301,6 +392,17 @@ export default function ReporteForm({ isOpen, onClose, onSubmit, onUploadPhoto, 
                       }`}
                     >
                       🟢 Localizado
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEstadoActual('fallecido')}
+                      className={`py-2.5 px-3 border rounded-xl text-xs font-bold transition-all text-center cursor-pointer ${
+                        estadoActual === 'fallecido'
+                          ? 'border-slate-700 text-slate-800 bg-slate-100 shadow-xs ring-2 ring-slate-200'
+                          : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50'
+                      }`}
+                    >
+                      ⚫ Fallecido
                     </button>
                   </div>
                 </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
-import type { Reporte, ReporteInsert } from '../types/database'
+import type { Reporte, ReporteInsert, ComentarioReporte, ComentarioReporteInsert } from '../types/database'
 
 export function useReportes() {
   const [reportes, setReportes] = useState<Reporte[]>([])
@@ -39,7 +39,7 @@ export function useReportes() {
     }
   }
 
-  const actualizarEstado = async (id: string, estado: 'sin_contacto' | 'localizado') => {
+  const actualizarEstado = async (id: string, estado: 'sin_contacto' | 'localizado' | 'fallecido') => {
     try {
       const { error: updateError } = await (supabase.from('reportes') as any)
         .update({ estado_actual: estado })
@@ -116,6 +116,35 @@ export function useReportes() {
     }
   }, [])
 
+  const cargarComentarios = async (reporteId: string): Promise<ComentarioReporte[]> => {
+    try {
+      const { data, error: commentsError } = await supabase
+        .from('comentarios_reporte')
+        .select('*')
+        .eq('reporte_id', reporteId)
+        .order('created_at', { ascending: true })
+
+      if (commentsError) throw commentsError
+      return data || []
+    } catch (err) {
+      console.error(err)
+      return []
+    }
+  }
+
+  const agregarComentario = async (comentario: ComentarioReporteInsert): Promise<boolean> => {
+    try {
+      const { error: insertError } = await (supabase.from('comentarios_reporte') as any)
+        .insert(comentario)
+
+      if (insertError) throw insertError
+      return true
+    } catch (err) {
+      console.error(err)
+      return false
+    }
+  }
+
   return {
     reportes,
     loading,
@@ -125,5 +154,8 @@ export function useReportes() {
     actualizarReporte,
     subirFoto,
     refetch: fetchReportes,
+    cargarComentarios,
+    agregarComentario,
   }
 }
+
